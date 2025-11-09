@@ -1,41 +1,35 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven3'   // nom configuré dans Jenkins
+        jdk 'jdk17'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/ton_nom/selenium-ci-cd.git'
+                git branch: 'main', url: 'https://github.com/tonUser/selenium-ci-cd.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Test') {
             steps {
-                script {
-                    sh 'docker build -t selenium-tests .'
-                }
+                sh 'mvn clean test'
             }
         }
 
-        stage('Run Tests in Docker') {
+        stage('Archive Reports') {
             steps {
-                script {
-                    sh 'docker run --rm -v $PWD/target:/app/target selenium-tests'
-                }
-            }
-        }
-
-        stage('Publish Reports') {
-            steps {
-                junit 'target/surefire-reports/*.xml'
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
-                    reportDir: 'target/surefire-reports', reportFiles: 'index.html', reportName: 'Test Report'])
+                junit '**/target/surefire-reports/*.xml'
+                archiveArtifacts artifacts: 'target/surefire-reports/*.xml', fingerprint: true
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline terminé — Résultats disponibles dans Jenkins'
+            echo 'Pipeline terminé.'
         }
     }
 }
