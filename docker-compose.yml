@@ -1,0 +1,28 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-ci
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      apt-get update &&
+      apt-get install -y maven wget gnupg2 unzip curl ca-certificates &&
+      wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg &&
+      echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list &&
+      apt-get update &&
+      apt-get install -y google-chrome-stable &&
+      rm -rf /var/lib/apt/lists/* &&
+      /usr/local/bin/jenkins.sh
+      "
+
+volumes:
+  jenkins_home:
